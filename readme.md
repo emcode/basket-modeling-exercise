@@ -30,8 +30,9 @@ values from original instruction to test if calculated results are correct.
 
 ## Roadmap / TODO
 
-1. Generalize discount system, add another discount type to improve design (it wasn't in requirements, but it would be a great idea)
-2. Improve procedure of adding items to the basket and interacting with discounts - it isn't "elegant" yet
+1. Add tests for the methods that deal with multiplication and division of any pricing values (`\Acme\Domain\Discount` namespace)
+2. Generalize discount system, add another discount type to improve design (it wasn't in requirements, but it would be a great idea)
+3. Improve procedure of adding items to the basket and interacting with discounts - it isn't "elegant" yet
 4. Add separate unit tests for DiscountApplicator class
 5. Add suggestion / infra for serialization / deserialization of the internal state of the basket (provide convenient DTO object)
 6. Add suggestion / infra for serialization / deserialization of the configuration of the system
