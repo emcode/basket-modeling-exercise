@@ -35,7 +35,7 @@ values from original instruction to test if calculated results are correct.
 3. Improve procedure of adding items to the basket and interacting with discounts - it isn't "elegant" yet
 4. Add separate unit tests for DiscountApplicator class
 5. Add suggestion / infra for serialization / deserialization of the internal state of the basket (provide convenient DTO object)
-6. Add suggestion / infra for serialization / deserialization of the configuration of the system
+6. Add suggestion / infra for serialization / deserialization of the configuration data (products, discounts and delivery cost rules)
 
 ## Example of configuration and usage in application
 
@@ -64,8 +64,8 @@ $discountApplicator = new DiscountApplicator([
       'DISCOUNT-01', // unique id of a discount algorithm
       'C1', // targeted product code
        50, // percentage of a discount 0 -> 100
-       2, // how many products with given product code have to be added to the basket to activate this discount
-       1, // how many products with given product code should be affected by this discount
+       2, // how many units with given product code have to be added to the basket to activate this discount
+       1, // how many units with given product code should be affected by this discount
    )
 ]);
 
