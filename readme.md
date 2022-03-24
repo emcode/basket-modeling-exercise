@@ -5,13 +5,15 @@ configurable discounts and delivery charge rules. The imaginary company's name i
 
 ## Assumptions
 
-- I assume that there is no need for a method `Basket::addProduct($productCode, $quantity)`; we are always adding one
-  product at a time - I assume that it is specific for Acme's products
-- prices are given in cents not dollars (to avoid issues with floating points / rounding when dealing with money)
+I assume that:
+- there is no need for a method `Basket::addProduct($productCode, $quantity)`; we are always adding one
+  product at a time - I assume that it is specific for Acme's products / industry
+- price values are in cents, not dollars, to avoid issues with floating points / rounding when dealing with money
 - conversion from and to cents should be done in UI layer (out of the scope of this library)
 - order of delivery rules given in configuration matters (first match wins) and configuration has to be coherent;
   ideally should be validated beforehand
-- configuration should be provided by instantiating PHP objects - as described in `Example of configuration...` section
+- configuration should be provided by instantiating PHP objects - as described in `Example of configuration...` section;
+  serialization / deserialization from lower level formats like PHP array or YAML could be added in the future
 
 ## How to test it locally
 
@@ -19,7 +21,8 @@ Make sure you have `PHP 8.1` with `bcmath` extension (should be installed and en
 and `composer` installed. Then:
 ```
 composer install
-./vendor/bin/phpunit ./tests
+composer run test 
+# ... or: ./vendor/bin/phpunit ./tests
 ```
 
 The best example of overall usage of this library is in the `./tests/OverallSystemTest.php` file. It contains
@@ -55,12 +58,13 @@ $productRepository = new ArrayProductRepository([
 
 // 2. Configure discount applicator
 $discountApplicator = new DiscountApplicator([
+    // this is example of "Second item by half price" discount
     new QuantityBasedDiscount(
       'DISCOUNT-01', // unique id of a discount algorithm
       'C1', // targeted product code
        50, // percentage of a discount 0 -> 100
-       2, // how many products with given code have to be added to the basket to activate this discount
-       1, // how many products with given code should be affected by discount
+       2, // how many products with given product code have to be added to the basket to activate this discount
+       1, // how many products with given product code should be affected by this discount
    )
 ]);
 
