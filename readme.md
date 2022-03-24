@@ -5,16 +5,18 @@ configurable discounts and delivery charge rules. The imaginary company's name i
 
 ## Assumptions
 
+- I assume that there is no need for a method `Basket::addProduct($productCode, $quantity)`; we are always adding one
+  product at a time - I assume that it is specific for Acme's products
 - prices are given in cents not dollars (to avoid issues with floating points / rounding when dealing with money)
-- conversion from and to cents should be done in UI layer (outside of this project) 
-- order of delivery rules given in configuration matters - first match wins
+- conversion from and to cents should be done in UI layer (out of the scope of this library)
+- order of delivery rules given in configuration matters (first match wins) and configuration has to be coherent;
+  ideally should be validated beforehand
 - configuration should be provided by instantiating PHP objects - as described in `Example of configuration...` section
-- in a typical e-commerce basket items are grouped by product id, but in this system currently grouping depends on discounts 
-  which can be quite limiting theoretically
 
 ## How to test it locally
 
-Make sure you have `PHP 8.1` with `bcmath` extension (should be installed and enabled by default) and `composer` installed. Then:
+Make sure you have `PHP 8.1` with `bcmath` extension (should be installed and enabled by default)
+and `composer` installed. Then:
 ```
 composer install
 ./vendor/bin/phpunit ./tests
@@ -25,8 +27,8 @@ values from original instruction to test if calculated results are correct.
 
 ## Roadmap / TODO
 
-1. Generalize discount system, add another discount type to improve design
-2. Improve procedure of adding items to the basket and interacting with discounts - it isn't "elegant" 
+1. Generalize discount system, add another discount type to improve design (it wasn't in requirements, but it would be a great idea)
+2. Improve procedure of adding items to the basket and interacting with discounts - it isn't "elegant" yet
 4. Add separate unit tests for DiscountApplicator class
 5. Add suggestion / infra for serialization / deserialization of the internal state of the basket (provide convenient DTO object)
 6. Add suggestion / infra for serialization / deserialization of the configuration of the system
