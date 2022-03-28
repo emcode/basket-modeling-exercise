@@ -18,7 +18,7 @@ Basket:
 Discount:
 - can be triggered by adding products to the `Basket` (products with specific: codes and quantity)
 - can influence the price of products with specific product codes
-- product(s) that trigger given discount can be the same as discounted products or can be different - it is configurable
+- product(s) that triggers given discount can be the same as discounted products or can be different - it is configurable
 
 ## Assumptions
 
