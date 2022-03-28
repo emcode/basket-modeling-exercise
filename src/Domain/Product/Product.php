@@ -20,7 +20,7 @@ class Product
             throw new InvalidProductDataException("Product price cannot be negative");
         }
 
-        if (empty($name)) {
+        if (empty($this->name)) {
             throw new InvalidProductDataException("Product name cannot be empty");
         }
     }

@@ -2,14 +2,19 @@
 
 namespace Acme\Domain\Discount;
 
-use Acme\Domain\Basket\Component;
+use Acme\Domain\Basket\ProductInBasket;
+use Acme\Domain\ProductFilteringTrait;
 
 class QuantityBasedDiscount implements DiscountInterface
 {
+    use ProductFilteringTrait;
+
     public function __construct(
         protected string $id,
-        // for which product code this special offer "reacts"?
-        protected string $productCode,
+        // by which product code this discount can be triggered?
+        protected string $triggeringProductCode,
+        // which product code should be discounted when discount is triggered?
+        protected string $affectedProductCode,
         // how much do we want to lower the initial price of a product?
         protected int $discountPercentage,
         // how many products within basket item has to exist for this discount to be applied?
@@ -18,8 +23,12 @@ class QuantityBasedDiscount implements DiscountInterface
         protected int $applyToQuantity,
     )
     {
-        if (empty($this->productCode)) {
-            throw new \InvalidArgumentException("Product code cannot be empty");
+        if (empty($this->triggeringProductCode)) {
+            throw new \InvalidArgumentException("Triggering product code cannot be empty");
+        }
+
+        if (empty($this->affectedProductCode)) {
+            throw new \InvalidArgumentException("Affected product code cannot be empty");
         }
 
         if ($this->discountPercentage <= 0 || $this->discountPercentage > 100) {
@@ -49,64 +58,78 @@ class QuantityBasedDiscount implements DiscountInterface
         return $this->id;
     }
 
-    public function canBeAppliedToProduct(string $productCode): bool
+    public function determineAffectedProducts(array $products): array
     {
-        return $this->productCode === $productCode;
+        $triggeringProducts = $this->selectTriggeringProducts($products);
+        if (count($triggeringProducts) < $this->requiredQuantity) {
+            return [];
+        }
+        $discountedProducts = $this->selectDiscountedProducts($products);
+        if (empty($discountedProducts)) {
+            return [];
+        }
+        return $this->unifyProducts($triggeringProducts, $discountedProducts);
+    }
+
+    public function selectTriggeringProducts(array $products): array
+    {
+        $allTriggeringProducts = $this->selectProductsByCode(
+            $products,
+            $this->triggeringProductCode
+        );
+
+        return array_slice($allTriggeringProducts, 0, $this->requiredQuantity);
+    }
+
+    public function selectDiscountedProducts(array $products): array
+    {
+        $productsToBeDiscounted = $this->selectProductsByCode(
+            $products,
+            $this->affectedProductCode
+        );
+
+        return array_slice($productsToBeDiscounted, 0, $this->applyToQuantity);
+    }
+    
+    public function canBeTriggeredByProduct(string $productCode): bool
+    {
+        return $this->triggeringProductCode === $productCode;
     }
 
     /**
-     * It returns new array with processed basket items, leaving original array untouched
-     * It copies all objects within array too, to ensure immutability of original values
-     *
-     * @param Component[] $basketItemComponents
-     * @return Component[]
+     * @param ProductInBasket[] $products
+     * @return ProductInBasket[]
      */
-    public function applyToBasketItemComponents(array $basketItemComponents): array
+    public function apply(array $products): array
     {
-        $this->assertProductCodeCorrectness($basketItemComponents);
+        $triggeringProducts = array_map(
+            fn (ProductInBasket $p) => ProductInBasket::createFromProduct(
+                $p,
+                $p->getUuid(),
+                $this->id,
+               null
+            ),
+            $this->selectTriggeringProducts($products)
+        );
 
-        if ($this->requiredQuantity <= count($basketItemComponents)) {
-            $componentsToDiscount = array_slice($basketItemComponents, 0, $this->applyToQuantity);
-            $componentsToLeaveAlone = array_slice($basketItemComponents, count($componentsToDiscount));
-        } else {
-            $componentsToDiscount = [];
-            $componentsToLeaveAlone = $basketItemComponents;
-        }
+        $discountedProducts = array_map(
+            fn (ProductInBasket $p) => ProductInBasket::createFromProduct(
+                $p,
+                $p->getUuid(),
+                $this->id,
+                $this->calculateDiscountedPrice($p->getPrice())
+            ),
+            $this->selectDiscountedProducts($products)
+        );
 
-        $newComponents = [];
-
-        foreach($componentsToDiscount as $c) {
-            $newComponents[] = $this->applyToComponent($c);
-        }
-
-        foreach($componentsToLeaveAlone as $c) {
-            $newComponents[] = $c->createCopyWithoutDiscountedPrice();
-        }
-
-        return $newComponents;
+        return $this->unifyProducts($triggeringProducts, $discountedProducts);
     }
 
-    protected function applyToComponent(Component $c): Component
+    public function calculateDiscountedPrice(int $initialPrice): int
     {
         // we use bcmath function here to not have to think about rounding
         // errors / floating point issues when working with price values
         $percentage = bcdiv((string) $this->discountPercentage, '100', 2);
-        $discounted = (int) bcmul((string) $c->getInitialPrice(), $percentage, 0);
-        return $c->createCopyWithNewDiscountedPrice($discounted);
-    }
-
-    /**
-     * @param array|Component[] $basketItemComponents
-     */
-    protected function assertProductCodeCorrectness(array $basketItemComponents): void
-    {
-        foreach($basketItemComponents as $c) {
-            if (!($this->canBeAppliedToProduct($c->getProductCode()))) {
-                throw new \RuntimeException(sprintf(
-                    "Offer with id %s cannot be applied to product with code %s. Sth went seriously wrong at earlier stage!",
-                    $this->id, $c->getProductCode()
-                ));
-            }
-        }
+        return (int) bcmul((string) $initialPrice, $percentage, 0);
     }
 }

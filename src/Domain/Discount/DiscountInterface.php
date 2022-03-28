@@ -2,16 +2,22 @@
 
 namespace Acme\Domain\Discount;
 
-use Acme\Domain\Basket\Component;
+use Acme\Domain\Basket\ProductInBasket;
 
 interface DiscountInterface
 {
     public function getId(): string;
-    public function canBeAppliedToProduct(string $productCode): bool;
 
     /**
-     * @param Component[] $basketItemComponents
-     * @return Component[]
+     * @param ProductInBasket[] $products
+     * @return ProductInBasket[]
      */
-    public function applyToBasketItemComponents(array $basketItemComponents): array;
+    public function determineAffectedProducts(array $products): array;
+    public function canBeTriggeredByProduct(string $productCode): bool;
+
+    /**
+     * @param ProductInBasket[] $products
+     * @return ProductInBasket[]
+     */
+    public function apply(array $products): array;
 }

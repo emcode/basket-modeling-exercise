@@ -3,6 +3,23 @@
 This is experiment in modeling specific problem space / domain - in this case: shopping basket with 
 configurable discounts and delivery charge rules. The imaginary company's name is: `Acme`.
 
+## Basic idea of how it works
+
+Product:
+- has unique product code and initial price
+- is represented by instance of a `Product` class
+
+Basket:
+- contains list of products (instance of `ProductInBasket `that inherits from `Product`)
+- products are added to the basket one at a time
+- if you'd add product with code `A-01` twice, it will be represented as two separate `ProductInBasket` instances (and
+  each of then will have same product code: `A-01`)
+
+Discount:
+- can be triggered by adding products to the `Basket` (products with specific: codes and quantity)
+- can influence the price of products with specific product codes
+- products that trigger given discount came same or different that products that will be discounted (it is configurable)
+
 ## Assumptions
 
 I assume that:
@@ -31,11 +48,9 @@ values from original instruction to test if calculated results are correct.
 ## Roadmap / TODO
 
 1. Add tests for the methods that deal with multiplication and division of any pricing values (`\Acme\Domain\Discount` namespace)
-2. Generalize discount system, add another discount type to improve design (it wasn't in requirements, but it would be a great idea)
-3. Improve procedure of adding items to the basket and interacting with discounts - it isn't "elegant" yet
-4. Add separate unit tests for DiscountApplicator class
-5. Add suggestion / infra for serialization / deserialization of the internal state of the basket (provide convenient DTO object)
-6. Add suggestion / infra for serialization / deserialization of the configuration data (products, discounts and delivery cost rules)
+2. Add separate unit tests for DiscountApplicator class
+3. Add suggestion / infra for serialization / deserialization of the internal state of the basket (provide convenient DTO object)
+4. Add suggestion / infra for serialization / deserialization of the configuration data (products, discounts and delivery cost rules)
 
 ## Example of configuration and usage in application
 
@@ -62,7 +77,8 @@ $discountApplicator = new DiscountApplicator([
     // this is example of "Second item by half price" discount
     new QuantityBasedDiscount(
       'DISCOUNT-01', // unique id of a discount algorithm
-      'C1', // targeted product code
+      'C1', // product code that triggers this discount
+      'C1', // product code that will be discounted
        50, // percentage of a discount 0 -> 100
        2, // how many units with given product code have to be added to the basket to activate this discount
        1, // how many units with given product code should be affected by this discount

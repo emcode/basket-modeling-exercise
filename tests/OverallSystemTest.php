@@ -27,7 +27,14 @@ class OverallSystemTest extends TestCase
         ]);
 
         $discountApplicator = new DiscountApplicator([
-            new QuantityBasedDiscount('DQ-01', 'R01', 50, 2, 1)
+            new QuantityBasedDiscount(
+                'DQ-01',
+                'R01',
+                'R01',
+                50,
+                2,
+                1
+            )
         ]);
 
         $deliveryCostResolver = new ChargeResolver([

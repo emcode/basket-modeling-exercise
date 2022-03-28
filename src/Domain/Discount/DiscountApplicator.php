@@ -2,10 +2,13 @@
 
 namespace Acme\Domain\Discount;
 
-use Acme\Domain\Basket\Item as BasketItem;
+use Acme\Domain\Basket\ProductInBasket;
+use Acme\Domain\ProductFilteringTrait;
 
 class DiscountApplicator
 {
+    use ProductFilteringTrait;
+
     /**
      * @param DiscountInterface[] $discounts
      */
@@ -16,34 +19,77 @@ class DiscountApplicator
     }
 
     /**
-     * @param BasketItem[] $basketItems
+     * @param ProductInBasket[] $products
+     * @param array
      */
-    public function findBasketItemForProduct(array $basketItems, string $productCode): ?BasketItem
+    public function distributeDiscountsToProducts(array $products): array
     {
-        $matchingBasketItem = null;
-        foreach($basketItems as $bi) {
-            // this is not elegant
-            // in the future change/move this fragment to depend on available discounts + existing basket data
-            // and not necessarily / not only on basket item method invoked below
-            // but let's leave it for now
-            if ($bi->doesWantToReceiveAnotherProduct($productCode)) {
-                $matchingBasketItem = $bi;
-                break;
+        $results = [];
+        foreach($products as $product) {
+            [ $discount, $affectedProducts, $unaffectedProducts ] = $this->matchDiscountToProduct(
+                $product->getCode(),
+                $products
+            );
+            if (null === $discount || empty($affectedProducts)) {
+                continue;
             }
+            $results[] = [ $discount, $affectedProducts ];
+            $results = array_merge(
+                $results,
+                $this->distributeDiscountsToProducts($unaffectedProducts)
+            );
         }
-        return $matchingBasketItem;
+        return $results;
     }
 
-    public function findDiscountForProduct(string $productCode): ?DiscountInterface
+    /**
+     * @param ProductInBasket[] $productsToAnalyse
+     */
+    public function matchDiscountToProduct(string $triggeringProductCode, array $productsToAnalyse): ?array
     {
-        $matchingOffer = null;
-        foreach($this->discounts as $offer) {
-            if ($offer->canBeAppliedToProduct($productCode)) {
-                $matchingOffer = $offer;
-                break;
+        $matchedDiscount = null;
+        $affectedProducts = null;
+        $unaffectedProducts = null;
+
+        foreach($this->getDiscountCandidatesForProductCode($triggeringProductCode) as $discountCandidate) {
+            [ $affectedProducts, $unaffectedProducts ] = $this->findOutAffectedAndUnaffectedProducts(
+                $discountCandidate,
+                $productsToAnalyse
+            );
+            if (empty($affectedProducts)) {
+                continue;
             }
+            $matchedDiscount = $discountCandidate;
+            break;
         }
-        return $matchingOffer;
+
+        return $matchedDiscount
+            ? [ $matchedDiscount, $affectedProducts, $unaffectedProducts ]
+            : [ null, [], [] ]
+        ;
     }
 
+    /**
+     * @param ProductInBasket[] $productsToAnalyse
+     */
+    public function findOutAffectedAndUnaffectedProducts(DiscountInterface $discount, array $productsToAnalyse): array
+    {
+        $affectedProducts = $discount->determineAffectedProducts($productsToAnalyse);
+        $unaffectedProducts = $this->diffProducts($affectedProducts, $productsToAnalyse);
+        return [
+            $affectedProducts,
+            $unaffectedProducts
+        ];
+    }
+
+    /**
+     * @return DiscountInterface[]
+     */
+    protected function getDiscountCandidatesForProductCode(string $productCode): array
+    {
+        return array_filter(
+            $this->discounts,
+            fn (DiscountInterface $d) => $d->canBeTriggeredByProduct($productCode)
+        );
+    }
 }
