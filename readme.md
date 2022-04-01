@@ -5,20 +5,41 @@ configurable discounts and delivery charge rules. The imaginary company's name i
 
 ## Basic idea of how it works
 
-Product:
+`Product`:
 - has unique product code and initial price
 - is represented by instance of a `Product` class
 
-Basket:
+`Basket`:
 - contains list of products (instance of `ProductInBasket `that inherits from `Product`)
 - products are added to the basket one at a time
 - if you'd add product with code `A-01` twice, it will be represented as two separate `ProductInBasket` instances (and
   each of then will have same product code: `A-01`)
 
-Discount:
-- can be triggered by adding products to the `Basket` (products with specific: codes and quantity)
-- can influence the price of products with specific product codes
-- product(s) that triggers given discount can be the same as discounted products or can be different - it is configurable
+`Discount`:
+- can be triggered by adding products to the `Basket`
+- can influence the price of products with specific product codes in specified quantity
+- discounts are distributed between products in basket on `first match wins` basis; order of `Discounts` defined in configuration matters
+- algorithm that applies discounts works like this:
+  a) from all configured discounts, find first that can be triggered by set of products in basket and results in discounting any of products that were put into the basket
+  b) take all products that did not trigger any discount and were not discounted so far, and repeat step 1
+
+`ProductInBasket`:
+- represents one unit of given `Product` inside a `Basket`
+- can *participate* in a discount in following ways: 
+  - can *trigger* a discount
+  - can *be subject of* a discount (her price can be lowered by a discount)
+  - or both
+- each instance of the `ProductInBasket` can *participate* in only one `Discount` at a time
+
+  | does trigger a discount? | is subject of a discount? | does participate in a discount? |
+  |--------------------------|---------------------------|---------------------------------|
+  | no                       | no                        | no                              |
+  | yes                      | no                        | yes                             |
+  | no                       | yes                       | yes                             |
+  | yes                      | yes                       | yes                             |
+- there can be many instances of `ProductInBasket` added to the `Basket` with same product code, therefore
+  depending on the needs, `ProductInBasket` may not represent exactly cart item / invoice line in `1:1` fashion (the
+  way of grouping / presenting items depends on policy of given company)
 
 ## Assumptions
 
