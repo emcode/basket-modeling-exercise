@@ -7,7 +7,7 @@ configurable discounts and delivery charge rules. The imaginary company's name i
 
 `Product`:
 - has unique product code and initial price
-- is represented by instance of a `Product` class
+- is fetched from product catalog (`CatalogInterface`)
 
 `Basket`:
 - contains list of products (instance of `ProductInBasket `that inherits from `Product`)
