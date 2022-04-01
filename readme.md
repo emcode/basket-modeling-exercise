@@ -20,8 +20,8 @@ configurable discounts and delivery charge rules. The imaginary company's name i
 - can influence the price of products with specific product codes in specified quantity
 - discounts are distributed between products in basket on `first match wins` basis; order of `Discounts` defined in configuration matters
 - algorithm that applies discounts works like this:
-  a) from all configured discounts, find first that can be triggered by set of products in basket and results in discounting any of products that were put into the basket
-  b) take all products that did not trigger any discount and were not discounted so far, and repeat step 1
+  1. From all configured discounts, find first that can be triggered by set of products in basket and results in discounting any of the products that were put into the basket
+  2. Take all products that did not participated in any discounts applied so far and repeat step 1
 
 `ProductInBasket`:
 - represents one unit of given `Product` inside a `Basket`
